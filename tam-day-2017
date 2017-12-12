@@ -19,7 +19,6 @@
 --whitelist-registry registry.hub.docker.com \
 --thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
 
-
 #### Delete Virtual Container Host ####
 ./vic-machine-linux delete --target vcsa-01a.corp.local \
 --user administrator@corp.local \
@@ -29,7 +28,6 @@
 
 #### Run local image from Harbor ####
 docker run -d -p 8080:80 registry.corp.local/myproject/httpd:1.0-unsigned
-
 
 #### Example template for Admiral ####
 ---
@@ -47,6 +45,19 @@ components:
         container_port: "80"
       restart_policy: "no"
 
+#### Demo Commands ####
+export DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/root/vic/virtual-container-host-1.2.1 DOCKER_HOST=vch1.corp.local:2376   
+docker login registry.corp.local
+docker run -it registry.corp.local/myproject/debian:1.0-signed
+docker run -d -p 8080:80 registry.corp.local/myproject/httpd:1.0-unsigned
+docker run -d --net routable registry.corp.local/myproject/httpd:1.0-unsigned
 
+#### Open firewall tcp/2377 outbound on ESXi ####
+./vic-machine-linux update firewall --target vcsa-01a.corp.local \
+--user administrator@corp.local \
+--compute-resource RegionA01-COMP01 \
+--allow \
+--thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
 
-
+TLS Thumbprints
+vCenter: F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
