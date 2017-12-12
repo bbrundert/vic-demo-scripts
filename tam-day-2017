@@ -1,0 +1,52 @@
+#### Create Virtual Container Host #### 
+./vic-machine-linux create \
+--target vcsa-01a.corp.local \
+--user administrator@corp.local \
+--compute-resource RegionA01-COMP01 \
+--image-store RegionA01-ISCSI01-COMP01 \
+--volume-store RegionA01-ISCSI01-COMP01:default \
+--public-network VM-RegionA01-vDS-COMP \
+--public-network-ip 192.168.100.23/24 \
+--public-network-gateway 192.168.100.1 \
+--dns-server 192.168.110.10 \
+--container-network VM-RegionA01-vDS-COMP:routable \
+--container-network-firewall VM-RegionA01-vDS-COMP:open \
+--bridge-network Bridge01-RegionA01-vDS-COMP \
+--name TAM_DAY \
+--tls-cname=192.168.100.23 \
+--registry-ca=/etc/docker/certs.d/registry.corp.local/ca.crt \
+--whitelist-registry registry.corp.local \
+--whitelist-registry registry.hub.docker.com \
+--thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
+
+
+#### Delete Virtual Container Host ####
+./vic-machine-linux delete --target vcsa-01a.corp.local \
+--user administrator@corp.local \
+--compute-resource RegionA01-COMP01 \
+--name TAM_DAY \
+--thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
+
+#### Run local image from Harbor ####
+docker run -d -p 8080:80 registry.corp.local/myproject/httpd:1.0-unsigned
+
+
+#### Example template for Admiral ####
+---
+name: "VMwareCNA NGINX"
+components:
+  nginx:
+    type: "App.Container"
+    data:
+      name: "nginx"
+      image: "registry.hub.docker.com/vmwarecna/nginx:latest"
+      _cluster: 1
+      publish_all: true
+      ports:
+      - host_port: "9080"
+        container_port: "80"
+      restart_policy: "no"
+
+
+
+
