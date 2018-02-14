@@ -1,0 +1,73 @@
+#### Create Virtual Container Host #### 
+./vic-machine-linux create \
+--target vcsa-01a.corp.local \
+--user administrator@corp.local \
+--compute-resource RegionA01-COMP01 \
+--image-store RegionA01-ISCSI01-COMP01 \
+--volume-store RegionA01-ISCSI01-COMP01:default \
+--public-network VM-RegionA01-vDS-COMP \
+--public-network-ip 192.168.100.23/24 \
+--public-network-gateway 192.168.100.1 \
+--dns-server 192.168.110.10 \
+--container-network VM-RegionA01-vDS-COMP:routable \
+--container-network-firewall VM-RegionA01-vDS-COMP:open \
+--bridge-network Bridge01-RegionA01-vDS-COMP \
+--name TAM_DAY \
+--tls-cname=192.168.100.23 \
+--registry-ca=/etc/docker/certs.d/registry.corp.local/ca.crt \
+--whitelist-registry registry.corp.local \
+--whitelist-registry registry.hub.docker.com \
+--thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
+
+#### Create vch1.corp.local ####
+./vic-machine-linux create --target vcsa-01a.corp.local --user administrator@vsphere.local --compute-resource RegionA01-COMP01 --image-store RegionA01-ISCSI01-COMP01 --volume-store RegionA01-ISCSI01-COMP01:default --public-network VM-RegionA01-vDS-COMP --public-network-ip 192.168.100.22/24 --public-network-gateway 192.168.100.1 --dns-server 192.168.110.10 --container-network VM-RegionA01-vDS-COMP:routable --container-network-firewall VM-RegionA01-vDS-COMP:open --bridge-network Bridge01-RegionA01-vDS-COMP --name virtual-container-host-1.3.0 --tls-cname=vch1.corp.local --registry-ca=/etc/docker/certs.d/registry.corp.local/ca.crt --whitelist-registry registry.corp.local --whitelist-registry registry.hub.docker.com --thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85 --debug=1
+
+#### Delete Virtual Container Host ####
+./vic-machine-linux delete --target vcsa-01a.corp.local \
+--user administrator@corp.local \
+--compute-resource RegionA01-COMP01 \
+--name TAM_DAY \
+--thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
+
+#### Run local image from Harbor ####
+docker run -d -p 8080:80 registry.corp.local/myproject/httpd:1.0-unsigned
+
+#### Run YELB ####
+docker run --name redis-server -p 6379:6379 -d redis:4.0.2
+docker run --name yelb-db -p 5432:5432 -d mreferre/yelb-db:0.2
+docker run --name yelb-appserver -d -p 4567:4567 mreferre/yelb-appserver:0.2
+docker run --name yelb-ui -d -p 8080:80 mreferre/yelb-ui:0.2
+
+#### Example template for Admiral ####
+---
+name: "VMwareCNA NGINX"
+components:
+  nginx:
+    type: "App.Container"
+    data:
+      name: "nginx"
+      image: "registry.hub.docker.com/vmwarecna/nginx:latest"
+      _cluster: 1
+      publish_all: true
+      ports:
+      - host_port: "9080"
+        container_port: "80"
+      restart_policy: "no"
+
+#### Demo Commands ####
+export DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/root/vic/virtual-container-host-1.2.1 DOCKER_HOST=vch1.corp.local:2376
+export DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/root/vic/virtual-container-host-1.3.0 DOCKER_HOST=vch1.corp.local:2376
+docker login registry.corp.local
+docker run -it registry.corp.local/myproject/debian:1.0-signed
+docker run -d -p 8080:80 registry.corp.local/myproject/httpd:1.0-unsigned
+docker run -d --net routable registry.corp.local/myproject/httpd:1.0-unsigned
+
+#### Open firewall tcp/2377 outbound on ESXi ####
+./vic-machine-linux update firewall --target vcsa-01a.corp.local \
+--user administrator@corp.local \
+--compute-resource RegionA01-COMP01 \
+--allow \
+--thumbprint=F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
+
+TLS Thumbprints
+vCenter: F7:68:F0:93:F4:EC:B7:FE:C1:02:3F:F3:AB:62:1A:50:E8:9A:0E:85
