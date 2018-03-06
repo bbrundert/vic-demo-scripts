@@ -32,11 +32,17 @@
 #### Run local image from Harbor ####
 docker run -d -p 8080:80 registry.corp.local/myproject/httpd:1.0-unsigned
 
+#### Run Debian ####
+docker run --name debian -it registry.corp.local/myproject/debian:1.0-signed
+docker rm <ID>
+docker rmi registry.corp.local/myproject/debian:1.0-signed
+
 #### Run YELB ####
 docker run --name redis-server -p 6379:6379 -d redis:4.0.2
 docker run --name yelb-db -p 5432:5432 -d mreferre/yelb-db:0.2
 docker run --name yelb-appserver -d -p 4567:4567 mreferre/yelb-appserver:0.2
 docker run --name yelb-ui -d -p 8080:80 mreferre/yelb-ui:0.2
+
 
 #### Example template for Admiral ####
 ---
